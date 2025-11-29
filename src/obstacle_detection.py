@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import pyrealsense2 as rs
 import time
+from hazard_stub import detect_hazards_rgb
 
 NEAR_THRESHOLD_M = 0.8  # meters
 
