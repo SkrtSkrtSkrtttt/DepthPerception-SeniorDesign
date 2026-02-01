@@ -2,13 +2,13 @@ import cv2
 import numpy as np
 import pyrealsense2 as rs
 import time
+from audio_feedback import AudioFeedback
 from hazard_stub import detect_hazards_rgb
 
 NEAR_THRESHOLD_M = 0.8  # meters
 
-
 def run_obstacle_and_motion_demo():
-    """Run the RealSense obstacle + motion detection demo."""
+    """Run the RealSense obstacle + motion detection demo with audio feedback."""
 
     # ----- RealSense setup -----
     pipeline = rs.pipeline()
@@ -22,6 +22,10 @@ def run_obstacle_and_motion_demo():
 
     prev_depth = None
     prev_time = time.time()
+
+    # ----- Audio feedback -----
+    audio = AudioFeedback(cooldown_sec=2.0, stable_sec=0.6)
+    prev_hazard_state = False
 
     try:
         while True:
@@ -59,8 +63,9 @@ def run_obstacle_and_motion_demo():
             )
 
             min_depth_seen = None
-            direction_text = "CENTER"
+            closest_direction = "CENTER"
 
+            # ----- Obstacle detection -----
             for cnt in contours:
                 area = cv2.contourArea(cnt)
                 if area < 500:
@@ -70,22 +75,30 @@ def run_obstacle_and_motion_demo():
                 cx, cy = x + w_box // 2, y + h_box // 2
 
                 d = depth_frame.get_distance(cx, cy)  # meters
-                if d > 0:
-                    if (min_depth_seen is None) or (d < min_depth_seen):
-                        min_depth_seen = d
 
-                # Decide left/center/right in image coordinates
+                # Direction for this obstacle
                 if cx < w / 3:
-                    direction_text = "LEFT"
+                    dir_for_this = "LEFT"
                 elif cx > 2 * w / 3:
-                    direction_text = "RIGHT"
+                    dir_for_this = "RIGHT"
                 else:
-                    direction_text = "CENTER"
+                    dir_for_this = "CENTER"
+
+                # Keep closest obstacle and its direction
+                if d > 0 and ((min_depth_seen is None) or (d < min_depth_seen)):
+                    min_depth_seen = d
+                    closest_direction = dir_for_this
 
                 # Draw bounding box
-                cv2.rectangle(color_image, (x, y), (x + w_box, y + h_box), (0, 0, 255), 2)
+                cv2.rectangle(
+                    color_image,
+                    (x, y),
+                    (x + w_box, y + h_box),
+                    (0, 0, 255),
+                    2,
+                )
 
-            # ----- Motion detection (depth differencing) -----
+            # Motion detection (depth differencing)
             motion_mask_vis = np.zeros_like(color_image)
 
             if prev_depth is not None:
@@ -135,7 +148,7 @@ def run_obstacle_and_motion_demo():
                 )
                 cv2.putText(
                     color_image,
-                    f"Direction: {direction_text}",
+                    f"Direction: {closest_direction}",
                     (10, 115),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     0.7,
@@ -153,7 +166,18 @@ def run_obstacle_and_motion_demo():
                     2,
                 )
 
-            # ----- Combine views -----
+            #  Audio feedback (TTS)
+            hazard_now = (min_depth_seen is not None)
+
+            audio.speak_hazard(
+                dist_m=min_depth_seen,
+                direction=closest_direction,
+                hazard_now=hazard_now,
+                force_clear=(prev_hazard_state and not hazard_now),
+            )
+
+            prev_hazard_state = hazard_now
+            # Combine views
             near_mask_vis = cv2.cvtColor(near_mask, cv2.COLOR_GRAY2BGR)
 
             top_row = np.hstack((color_image, depth_vis))
@@ -170,6 +194,7 @@ def run_obstacle_and_motion_demo():
 
     except Exception as e:
         print("[ERROR]", e)
+
     finally:
         print("[INFO] Stopping pipeline...")
         pipeline.stop()
@@ -177,5 +202,4 @@ def run_obstacle_and_motion_demo():
 
 
 if __name__ == "__main__":
-    # Allow running this module directly
     run_obstacle_and_motion_demo()
