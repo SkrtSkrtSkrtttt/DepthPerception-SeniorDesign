@@ -87,6 +87,31 @@ Planned:
 - Define a simple protocol between the laptop (RealSense + Python) and ESP32  
 
 ---
+### Thermal Imaging for Fire Detection (Proof of Concept)
+
+Planned:
+
+- Investigate the use of a low-resolution thermal camera for direct flame and heat-source detection
+- Evaluate the FLIR Radiometric Lepton Dev Kit V2 as a potential thermal sensing module
+- Use thermal imaging to detect high-temperature regions associated with active fires
+- Combine thermal data with RGB-based YOLO detection for improved reliability
+- Develop a proof-of-concept pipeline for thermal + depth + RGB sensor fusion
+
+Rationale:
+
+- Thermal imaging enables direct detection of heat signatures that may not be visible in RGB images
+- Improves robustness in low-light, smoky, or visually occluded environments
+- Provides an independent sensing modality to reduce false positives
+- Serves as a validation platform before committing to larger hardware integration
+
+Future Work:
+
+- Interface thermal module with Python processing pipeline
+- Calibrate thermal readings against depth and RGB frames
+- Evaluate detection accuracy under controlled flame and heating experiments
+- Explore integration with ESP32/Raspberry Pi for embedded deployment
+
+---
 ## Recent Updates (February 2026)
 
 ### Audio Feedback Integration
