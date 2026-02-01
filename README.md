@@ -4,7 +4,6 @@ Senior Design — Stony Brook University
 Team: Depth Perception  
 Advisor: Prof. Murali Subbarao  
 Last Updated:  February 1st 2026
-GitHub Repo Maintained by: Naafiul Hossain
 
 ---
 
