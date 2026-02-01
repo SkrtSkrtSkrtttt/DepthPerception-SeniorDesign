@@ -3,7 +3,7 @@
 Senior Design — Stony Brook University  
 Team: Depth Perception  
 Advisor: Prof. Murali Subbarao  
-Last Updated: November 27, 2025
+Last Updated:  February 1st 2026
 
 ---
 
@@ -87,3 +87,51 @@ Planned:
 - Define a simple protocol between the laptop (RealSense + Python) and ESP32  
 
 ---
+## Recent Updates (February 2026)
+
+### Audio Feedback Integration
+
+- Added real-time text-to-speech (TTS) audio feedback using `pyttsx3`
+- Implemented spoken alerts for:
+  - Closest obstacle distance
+  - Direction (LEFT / CENTER / RIGHT)
+  - Near-hazard status
+- Created a dedicated `audio_feedback.py` module to manage speech output
+
+### Debounced Audio Feedback System
+
+- Implemented a cooldown-based “debounce” mechanism to prevent excessive audio output
+- Prevents overlapping or rapidly repeated speech when obstacle distance changes quickly
+- Uses time-based rate limiting and message caching to improve clarity and usability
+
+### Codebase Restructuring
+
+- Simplified repository structure by removing the `src/` directory
+- Moved all Python source files to the project root for easier collaboration
+- Updated imports to support flat project layout
+- Improved cross-platform compatibility and reduced setup complexity
+
+### Technical Challenges and Solutions
+
+#### 1. Text-to-Speech Initialization Errors (Windows)
+
+**Issue:**
+- Encountered COM initialization and threading errors when using `pyttsx3` on Windows
+- Error: `Cannot change thread mode after it is set`
+
+**Solution:**
+- Refactored TTS initialization to occur once at program startup
+- Avoided repeated engine reinitialization inside the main loop
+- Isolated speech logic inside a dedicated `AudioFeedback` class
+
+#### 2. Audio Overlap and Rapid Speech
+
+**Issue:**
+- Distance measurements changed rapidly frame-to-frame
+- Resulted in overlapping speech such as:
+  “3 meters… 5 meters… 2 meters…”
+
+**Solution:**
+- Implemented cooldown timers and message deduplication
+- Only allows speech after a minimum time interval
+- Prevents repeating identical messages within short intervals
