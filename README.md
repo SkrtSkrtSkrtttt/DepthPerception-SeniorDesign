@@ -128,13 +128,15 @@ Future Work:
 - Implemented a cooldown-based “debounce” mechanism to prevent excessive audio output
 - Prevents overlapping or rapidly repeated speech when obstacle distance changes quickly
 - Uses time-based rate limiting and message caching to improve clarity and usability
-
+- 
 ### Codebase Restructuring
 
-- Simplified repository structure by removing the `src/` directory
-- Moved all Python source files to the project root for easier collaboration
-- Updated imports to support flat project layout
-- Improved cross-platform compatibility and reduced setup complexity
+- Retained the `src/` directory for core vision and processing modules  
+- Maintained `audio_feedback.py` at the project root for simplified imports and platform compatibility  
+- Updated import paths to support mixed root/src organization  
+- Reduced setup complexity for collaborators across different development environments  
+- Improved project maintainability while avoiding unnecessary packaging overhead
+
 
 ### Technical Challenges and Solutions
 
