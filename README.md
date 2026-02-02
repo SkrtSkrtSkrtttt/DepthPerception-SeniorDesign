@@ -128,7 +128,7 @@ Future Work:
 - Implemented a cooldown-based “debounce” mechanism to prevent excessive audio output
 - Prevents overlapping or rapidly repeated speech when obstacle distance changes quickly
 - Uses time-based rate limiting and message caching to improve clarity and usability
-- 
+  
 ### Codebase Restructuring
 
 - Retained the `src/` directory for core vision and processing modules  
@@ -162,3 +162,11 @@ Future Work:
 - Implemented cooldown timers and message deduplication
 - Only allows speech after a minimum time interval
 - Prevents repeating identical messages within short intervals
+  
+### Experimental Person Detection (Prototype)
+
+- Implemented initial person detection using OpenCV HOG + SVM on RGB frames  
+- Integrated depth sampling to estimate distance and direction of detected persons  
+- Displays bounding boxes and labels for detected individuals  
+- Provides preliminary audio feedback for detected persons  
+- Currently under testing and optimization due to occasional false positives and missed detections
