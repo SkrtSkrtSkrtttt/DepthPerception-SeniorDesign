@@ -9,7 +9,7 @@ Last Updated:  February 1st 2026
 
 ## Overview
 
-DepthPerception is an assistive safety system designed to support visually impaired individuals in navigating indoor environments. The system uses the Intel RealSense D435i RGB-D camera to identify and localize indoor hazards by combining:
+Depth Perception is a senior design team project at Stony Brook University aimed at developing an assistive safety system for visually impaired individuals navigating indoor environments. The system leverages the Intel RealSense D435i RGB-D camera to identify and localize hazards by combining:
 
 - RGB image analysis  
 - Depth sensing and 3D scene reconstruction  
