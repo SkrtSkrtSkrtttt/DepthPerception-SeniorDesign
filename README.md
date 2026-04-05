@@ -1,5 +1,5 @@
 # DepthPerception – Vision-Based Smart Home Hazard Detection System
-
+---
 Senior Design — Stony Brook University  
 Team: Depth Perception  
 Advisor: Prof. Murali Subbarao  
