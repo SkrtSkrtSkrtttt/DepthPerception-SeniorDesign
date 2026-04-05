@@ -23,7 +23,7 @@ import time
 from collections import deque
 
 from camera         import RealSenseCamera
-from mapper         import OccupancyMapper, GRID_RES, GRID_W, GRID_H, HAZARD, EXIT, FREE, OCCUPIED
+from mapper         import OccupancyMapper, GRID_RES, GRID_W, GRID_H
 from detector       import HazardDetector, draw_detections
 from planner        import astar, simplify_path
 from navigator      import path_to_instructions
@@ -40,30 +40,37 @@ NEAR_THRESHOLD_M    = 0.8
 FLOOR_OBS_THRESHOLD = 0.5
 FLOOR_OBS_MIN_PX    = 300
 EXIT_LOCK_FRAMES    = 20
-FPS_WINDOW          = 30    # average FPS over this many frames
+FPS_WINDOW          = 30
 
-# ── Grid colour lookup table (BGR) ────────────────────────────────────────────
-# Shape (5, 3) — index by cell value to get BGR colour
+# ── Grid colour LUT (BGR) ─────────────────────────────────────────────────────
 GRID_LUT = np.array([
-    [50,  50,  50 ],   # 0 unknown
-    [20,  200, 20 ],   # 1 free
-    [60,  60,  180],   # 2 occupied
-    [0,   0,   255],   # 3 hazard
-    [0,   255, 255],   # 4 exit
+    [50,  50,  50 ],
+    [20,  200, 20 ],
+    [60,  60,  180],
+    [0,   0,   255],
+    [0,   255, 255],
 ], dtype=np.uint8)
 
 GRID_VIS_SCALE = 2
 
+# ── HUD colours (BGR) ─────────────────────────────────────────────────────────
+HUD_BG        = (30,  30,  30 )
+COL_WHITE     = (255, 255, 255)
+COL_GREEN     = (60,  220, 60 )
+COL_ORANGE    = (0,   165, 255)
+COL_RED       = (60,  60,  240)
+COL_YELLOW    = (0,   220, 220)
+COL_GRAY      = (160, 160, 160)
+COL_CYAN      = (255, 220, 0  )
+
 
 def render_grid(grid, path=None, user_cell=None, scale=GRID_VIS_SCALE):
-    """Vectorised grid render — numpy LUT, no Python loops."""
-    img_small = GRID_LUT[grid]   # (H, W, 3) directly
+    img_small = GRID_LUT[grid]
     img = cv2.resize(
         img_small,
         (GRID_W * scale, GRID_H * scale),
         interpolation=cv2.INTER_NEAREST
     )
-
     if path:
         for r, c in path:
             cv2.rectangle(img,
@@ -74,8 +81,150 @@ def render_grid(grid, path=None, user_cell=None, scale=GRID_VIS_SCALE):
         r, c = user_cell
         cv2.circle(img,
                    (c * scale + scale // 2, r * scale + scale // 2),
-                   scale + 1, (255, 255, 255), -1)
+                   scale + 2, (255, 255, 255), -1)
     return img
+
+
+def draw_hud(frame, fps, exit_locked, exit_confirm_cnt, det_result, hazard_now, min_dist=None):
+    """
+    Draw a semi-transparent HUD panel in the top-left corner.
+    All status info lives here — nothing floats over detections.
+    """
+    h, w = frame.shape[:2]
+
+    # Panel dimensions
+    panel_w = 280
+    panel_h = 170
+    margin  = 10
+
+    # Draw semi-transparent background
+    overlay = frame.copy()
+    cv2.rectangle(overlay,
+                  (margin, margin),
+                  (margin + panel_w, margin + panel_h),
+                  HUD_BG, -1)
+    cv2.addWeighted(overlay, 0.65, frame, 0.35, 0, frame)
+
+    # Panel border
+    cv2.rectangle(frame,
+                  (margin, margin),
+                  (margin + panel_w, margin + panel_h),
+                  (80, 80, 80), 1)
+
+    x0 = margin + 10
+    y  = margin + 22
+    dy = 24
+
+    # ── FPS ──────────────────────────────────────────────────────────────────
+    fps_col = COL_GREEN if fps >= 15 else COL_ORANGE if fps >= 8 else COL_RED
+    cv2.putText(frame, f"FPS  {fps:.0f}", (x0, y),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.55, fps_col, 1, cv2.LINE_AA)
+    y += dy
+
+    # ── Exit status ───────────────────────────────────────────────────────────
+    if exit_locked:
+        cv2.putText(frame, "EXIT  LOCKED", (x0, y),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.55, COL_GREEN, 1, cv2.LINE_AA)
+    else:
+        pct = int((exit_confirm_cnt / EXIT_LOCK_FRAMES) * 100)
+        cv2.putText(frame, f"EXIT  searching {pct}%  [E]=set",
+                    (x0, y),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.45, COL_ORANGE, 1, cv2.LINE_AA)
+    y += dy
+
+    # ── Obstacle warning ──────────────────────────────────────────────────────
+    if hazard_now and min_dist is not None:
+        cv2.putText(frame, f"OBSTACLE  {min_dist:.2f}m",
+                    (x0, y),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.55, COL_RED, 2, cv2.LINE_AA)
+    else:
+        cv2.putText(frame, "OBSTACLE  clear",
+                    (x0, y),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.55, COL_GREEN, 1, cv2.LINE_AA)
+    y += dy
+
+    # ── Fire / smoke ──────────────────────────────────────────────────────────
+    fire_dets  = [d for d in det_result.hazards if d.label == "fire"]
+    smoke_dets = [d for d in det_result.hazards if d.label == "smoke"]
+
+    if fire_dets:
+        best_fire = max(fire_dets, key=lambda d: d.confidence)
+        cv2.putText(frame,
+                    f"FIRE  {best_fire.confidence:.0%}  {best_fire.direction}  {best_fire.depth_m:.1f}m",
+                    (x0, y),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.50, COL_RED, 2, cv2.LINE_AA)
+    elif smoke_dets:
+        best_smoke = max(smoke_dets, key=lambda d: d.confidence)
+        cv2.putText(frame,
+                    f"SMOKE  {best_smoke.confidence:.0%}  {best_smoke.direction}",
+                    (x0, y),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.50, COL_ORANGE, 1, cv2.LINE_AA)
+    else:
+        cv2.putText(frame, "FIRE    none detected",
+                    (x0, y),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.50, COL_GRAY, 1, cv2.LINE_AA)
+    y += dy
+
+    # ── Door ─────────────────────────────────────────────────────────────────
+    if det_result.doors:
+        best_door = max(det_result.doors, key=lambda d: d.confidence)
+        method = "model" if best_door.confidence > 0.50 else "depth"
+        cv2.putText(frame,
+                    f"DOOR  {best_door.confidence:.0%}  {best_door.direction}  [{method}]",
+                    (x0, y),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.50, COL_GREEN, 1, cv2.LINE_AA)
+    else:
+        cv2.putText(frame, "DOOR    not visible",
+                    (x0, y),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.50, COL_GRAY, 1, cv2.LINE_AA)
+    y += dy
+
+    # ── Person ────────────────────────────────────────────────────────────────
+    if det_result.persons:
+        nearest = min(det_result.persons, key=lambda p: p.depth_m)
+        cv2.putText(frame,
+                    f"PERSON  {nearest.depth_m:.1f}m  {nearest.direction}",
+                    (x0, y),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.50, COL_CYAN, 1, cv2.LINE_AA)
+    else:
+        cv2.putText(frame, "PERSON  not detected",
+                    (x0, y),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.50, COL_GRAY, 1, cv2.LINE_AA)
+
+
+def draw_instruction_bar(frame, instructions):
+    """
+    Draw escape route instructions as a bar at the bottom of the frame.
+    Semi-transparent dark background, yellow text.
+    """
+    if not instructions:
+        return
+
+    h, w = frame.shape[:2]
+    bar_h   = 28 * min(len(instructions[:3]), 3) + 16
+    bar_y   = h - bar_h - 5
+
+    overlay = frame.copy()
+    cv2.rectangle(overlay, (0, bar_y), (w, h), (20, 20, 20), -1)
+    cv2.addWeighted(overlay, 0.70, frame, 0.30, 0, frame)
+
+    for i, line in enumerate(instructions[:3]):
+        cv2.putText(frame, f"{i+1}. {line}",
+                    (10, bar_y + 22 + i * 28),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.52, COL_YELLOW, 1, cv2.LINE_AA)
+
+
+def draw_panel_labels(combined, cam_w, depth_w, grid_w, h):
+    """Draw small labels at the top of each panel."""
+    label_y = 18
+    font    = cv2.FONT_HERSHEY_SIMPLEX
+
+    cv2.putText(combined, "Camera", (8, label_y),
+                font, 0.45, (200, 200, 200), 1, cv2.LINE_AA)
+    cv2.putText(combined, "Depth", (cam_w + 8, label_y),
+                font, 0.45, (200, 200, 200), 1, cv2.LINE_AA)
+    cv2.putText(combined, "Grid map", (cam_w + depth_w + 8, label_y),
+                font, 0.45, (200, 200, 200), 1, cv2.LINE_AA)
 
 
 def run():
@@ -96,8 +245,8 @@ def run():
     exit_locked      = False
     exit_confirm_cnt = 0
     prev_hazard      = False
+    min_dist_display = None
 
-    # Stable FPS counter
     frame_times = deque(maxlen=FPS_WINDOW)
     prev_time   = time.time()
 
@@ -117,37 +266,34 @@ def run():
 
             depth_units = camera.get_depth_units(depth_frame)
             h, w = color_image.shape[:2]
-
-            # Compute depth_m once — reused for obstacle + floor detection
             depth_m = depth_image.astype(np.float32) * depth_units
 
-            # ── 1. Update occupancy map ──────────────────────────────────────
+            # ── 1. Update map ────────────────────────────────────────────────
             mapper.reset_hazards()
             mapper.update(depth_image, depth_units, camera)
 
             # ── 2. Detection ─────────────────────────────────────────────────
             det_result = detector.detect(color_image, depth_frame, camera)
 
-            # ── 3. Register hazards in map ───────────────────────────────────
+            # ── 3. Register hazards ──────────────────────────────────────────
             hazard_labels = []
             for hz in det_result.hazards:
                 wx, _, wz = hz.world_xyz
                 mapper.mark_hazard(wx, wz)
                 hazard_labels.append(hz.label)
 
-            # ── 4. Floor obstacle detection (vectorised) ─────────────────────
+            # ── 4. Floor obstacle detection ──────────────────────────────────
             floor_mask = (depth_m > 0.1) & (depth_m < FLOOR_OBS_THRESHOLD)
-            floor_mask[:2 * h // 3, :] = False   # bottom third only
-
+            floor_mask[:2 * h // 3, :] = False
             if floor_mask.sum() > FLOOR_OBS_MIN_PX:
                 floor_depths = np.where(floor_mask, depth_m, 999.0)
                 min_idx      = np.unravel_index(floor_depths.argmin(), floor_depths.shape)
                 floor_dist   = depth_m[min_idx]
                 fx, fy       = min_idx[1], min_idx[0]
-                cv2.circle(color_image, (fx, fy), 10, (0, 165, 255), -1)
-                cv2.putText(color_image, f"Floor {floor_dist:.2f}m",
-                            (fx - 25, fy - 12),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 165, 255), 1)
+                cv2.circle(color_image, (fx, fy), 8, COL_ORANGE, -1)
+                cv2.putText(color_image, f"{floor_dist:.2f}m",
+                            (fx + 10, fy),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.42, COL_ORANGE, 1, cv2.LINE_AA)
                 hazard_labels.append("floor obstacle")
 
             # ── 5. Register exit ─────────────────────────────────────────────
@@ -185,52 +331,36 @@ def run():
                     audio.speak_route(instructions)
                 else:
                     current_path = []
+                    instructions = ["No clear path found — stay low."]
                     audio.speak("No clear path to exit. Stay low.", force=True)
                 last_replan_time = now
 
-            # ── 8. Immediate obstacle warning ────────────────────────────────
+            # ── 8. Obstacle warning ──────────────────────────────────────────
             valid_near = (depth_m > 0.1) & (depth_m < NEAR_THRESHOLD_M)
             hazard_now = bool(valid_near.any())
 
             if hazard_now:
-                masked    = np.where(valid_near, depth_m, 999.0)
-                min_idx   = np.unravel_index(masked.argmin(), masked.shape)
-                min_dist  = float(depth_m[min_idx])
-                cx_obs    = int(min_idx[1])
-                direction = "LEFT" if cx_obs < w/3 else "RIGHT" if cx_obs > 2*w/3 else "CENTER"
-                audio.speak_hazard(min_dist, direction, hazard_now=True)
+                masked           = np.where(valid_near, depth_m, 999.0)
+                min_idx          = np.unravel_index(masked.argmin(), masked.shape)
+                min_dist_display = float(depth_m[min_idx])
+                cx_obs           = int(min_idx[1])
+                direction        = "LEFT" if cx_obs < w/3 else "RIGHT" if cx_obs > 2*w/3 else "CENTER"
+                audio.speak_hazard(min_dist_display, direction, hazard_now=True)
             else:
+                min_dist_display = None
                 if prev_hazard:
                     audio.speak_hazard(None, "CENTER", hazard_now=False, force_clear=True)
             prev_hazard = hazard_now
 
-            # ── 9. Draw detections + overlays ────────────────────────────────
+            # ── 9. Draw detections ───────────────────────────────────────────
             draw_detections(color_image, det_result)
 
-            cv2.putText(color_image, f"FPS: {fps:.1f}", (10, 25),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+            # ── 10. Draw HUD + instruction bar ───────────────────────────────
+            draw_hud(color_image, fps, exit_locked, exit_confirm_cnt,
+                     det_result, hazard_now, min_dist_display)
+            draw_instruction_bar(color_image, instructions)
 
-            exit_txt = (
-                "EXIT LOCKED" if exit_locked
-                else f"Searching ({exit_confirm_cnt}/{EXIT_LOCK_FRAMES}) | E=set manually"
-            )
-            cv2.putText(color_image, exit_txt, (10, 52),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
-
-            if det_result.doors:
-                best = max(det_result.doors, key=lambda d: d.confidence)
-                method = "model" if best.confidence > 0.50 else "depth"
-                cv2.putText(color_image,
-                            f"Door: {method} {best.confidence:.0%} {best.direction}",
-                            (10, 76),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 1)
-
-            if instructions:
-                for i, line in enumerate(instructions[:4]):
-                    cv2.putText(color_image, line, (10, 105 + i * 20),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.42, (0, 220, 255), 1)
-
-            # ── 10. Compose display ──────────────────────────────────────────
+            # ── 11. Compose display ──────────────────────────────────────────
             depth_vis    = cv2.applyColorMap(
                 cv2.convertScaleAbs(depth_image, alpha=0.03),
                 cv2.COLORMAP_JET
@@ -239,6 +369,10 @@ def run():
             grid_resized = cv2.resize(grid_img, (h, h), interpolation=cv2.INTER_NEAREST)
 
             combined = np.hstack([color_image, depth_vis, grid_resized])
+
+            # Panel labels at very top
+            draw_panel_labels(combined, w, w, h, h)
+
             cv2.imshow("Kitchen Hazard System  |  Q=quit  E=set exit", combined)
 
             # ── Key handling ─────────────────────────────────────────────────
