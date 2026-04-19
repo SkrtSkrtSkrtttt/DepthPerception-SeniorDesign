@@ -231,14 +231,18 @@ Key features:
 
 ```
 src/
-├── main.py            # Main loop — orchestrates everything
-├── camera.py          # RealSense D435 capture and depth projection
-├── mapper.py          # ICP pose tracking + occupancy grid
-├── detector.py        # YOLOv8 + fire heuristic + door detection
-├── planner.py         # A* pathfinding on occupancy grid
-├── navigator.py       # Waypoints → spoken directions
-├── audio_feedback.py  # Thread-safe TTS with Windows COM fix
-└── hazard_stub.py     # Legacy stub — no longer used
+├── main.py # Main loop — orchestrates full system
+├── camera.py # RealSense D435 capture and depth projection
+├── mapper.py # ICP pose tracking + occupancy grid
+├── detector.py # YOLOv8 + fire/smoke + door detection
+├── planner.py # A* pathfinding on occupancy grid
+├── navigator.py # Waypoints → spoken directions
+├── audio_feedback.py # Thread-safe TTS with Windows COM fix
+├── thermal_receiver.py # TCP receiver for ESP32 thermal stream
+└── hazard_stub.py # Legacy stub — no longer used
+
+embedded/
+└── updated_threshold_TLinear_highgain.c # ESP32 (FreeRTOS) firmware for FLIR Lepton thermal streaming
 ```
 
 ---
@@ -278,15 +282,4 @@ The window shows three panels side by side:
 | Right — Grid map | Top-down occupancy map (green = free, dark = obstacle, red = hazard, yellow = exit, orange = planned escape path, white dot = user) |
 
 ---
-
-## Known Limitations
-
-| Issue | Cause | Potential Fix |
-|-------|-------|---------------|
-| ICP drift over time | No angle encoder on mount | Add rotary encoder; use known angle instead of ICP |
-| Misses small floor objects | YOLO not trained on them | Depth mask fallback catches most cases |
-| Exit hard to auto-detect | No COCO door class | Press `E` to register manually; depth gap method is a best-effort fallback |
-| No heat/hot surface detection | D435 has no thermal sensor | Add a thermal camera (e.g. FLIR Lepton) |
-| Depth fails on shiny surfaces | Infrared reflection | Fill depth holes with inpainting in `mapper.py` |
-| Audio speaks only once | `stable_start` not resetting | Fixed in current `audio_feedback.py` |
 
