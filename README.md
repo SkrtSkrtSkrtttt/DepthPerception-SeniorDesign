@@ -20,6 +20,7 @@ The camera rotates continuously around the kitchen. Every frame it captures, the
 3. **Updates a top-down map** of the kitchen with all of that information
 4. **Plans the safest path to the exit** and speaks the directions aloud (A*)
 
+![System Architecture](system_architecture.png)
 ---
 
 ## Key Terminology
