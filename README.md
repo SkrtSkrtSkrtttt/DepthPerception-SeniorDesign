@@ -1,9 +1,11 @@
 ## DepthPerception – Vision-Based Hazard Detection System
 ---
-Senior Design — Stony Brook University  
-Team: Depth Perception  
+Department of Electrical and Computer Engineering Stony Brook University 
+Team: DepthPerception
 Advisor: Prof. Murali Subbarao  
+Github Authored: Naafiul Hossain
 Last Updated: April 18, 2026
+
 
 ---
 # Kitchen Hazard Detection & Escape Route System
