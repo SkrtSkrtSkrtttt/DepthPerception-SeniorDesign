@@ -13,12 +13,16 @@ A real-time kitchen safety system using an Intel RealSense D435 depth camera. Th
 
 ## How It Works — Big Picture
 
-The camera rotates continuously around the kitchen. Every frame it captures, the system does four things at once:
+The system uses both RGB/depth and thermal sensing to monitor the environment in real time.
 
-1. **Figures out where the camera is pointing** (ICP)
-2. **Identifies hazards, people, and doors** in the image (YOLO)
-3. **Updates a top-down map** of the kitchen with all of that information
-4. **Plans the safest path to the exit** and speaks the directions aloud (A*)
+The RealSense camera rotates continuously around the kitchen. Every frame it captures, the system does four things at once:
+
+1. **Figures out where the camera is pointing** (ICP)  
+2. **Identifies hazards, people, and doors** in the image (YOLO)  
+3. **Updates a top-down map** of the kitchen with all of that information  
+4. **Plans the safest path to the exit** and speaks the directions aloud (A*)  
+
+In parallel, a FLIR Lepton thermal camera (via an ESP32 running FreeRTOS) streams temperature data over Wi-Fi. This data is processed to detect high-temperature regions (e.g., fire, hot surfaces) and is fused into the world map as additional hazard zones.
 
 ![System Architecture](system_architecture.png.png)
 ---
