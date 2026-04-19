@@ -4,6 +4,7 @@ Senior Design — Stony Brook University
 Team: Depth Perception  
 Advisor: Prof. Murali Subbarao  
 Last Updated: April 18, 2026
+
 ---
 # Kitchen Hazard Detection & Escape Route System
 
