@@ -187,6 +187,46 @@ Key constants:
 
 ---
 
+### `thermal_receiver.py` — Thermal Stream Receiver
+Background TCP module that receives and processes thermal data streamed from the ESP32-based FLIR Lepton system.
+
+Key responsibilities:
+- Listens for incoming thermal frames over Wi-Fi/TCP from the ESP32
+- Parses the custom packet format (header + raw frame payload)
+- Converts TLinear thermal counts into real-world temperature values (°C / °F)
+- Tracks maximum temperature and detects “hot” regions using configurable thresholds
+- Stores the latest thermal frame and state in a thread-safe structure for system-wide access
+- Exposes APIs (`get_latest_state`, `get_latest_frame`) for integration with the main pipeline
+
+Key features:
+- Supports real-time streaming at frame-level granularity
+- Automatically handles connection loss and reconnection
+- Decodes ESP32 mode flags (high gain, TLinear, resolution modes)
+- Designed for future sensor fusion with RGB + depth data
+
+---
+
+### `updated_threshold_TLinear_highgain.c` — ESP32 Thermal Streamer
+Embedded firmware running on the ESP32 (FreeRTOS-based) that interfaces with the FLIR Lepton thermal camera and streams data to the host system.
+
+Key responsibilities:
+- Configures the FLIR Lepton using I2C (CCI) and captures frames over SPI (VoSPI)
+- Enables radiometric TLinear mode with high gain for accurate temperature measurement
+- Captures full thermal frames (80×60) in real time
+- Computes frame statistics (max value, averages, hot threshold detection)
+- Packages data into a structured header + payload format
+- Streams thermal data over Wi-Fi using a TCP client to the Python receiver
+
+Key features:
+- Runs on FreeRTOS for real-time task scheduling and concurrency
+- Uses dual interfaces:
+  - I2C → camera configuration
+  - SPI → high-speed frame acquisition
+- Supports temperature-based thresholding (e.g., detecting surfaces above ~60°C)
+- Implements automatic reconnection and continuous streaming
+- Designed for integration with higher-level perception and sensor fusion systems
+
+---
 ## Project Structure
 
 ```
