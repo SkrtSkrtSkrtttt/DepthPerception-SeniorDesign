@@ -1,4 +1,4 @@
-# DepthPerception – Vision-Based Hazard Detection System
+## DepthPerception – Vision-Based Hazard Detection System
 ---
 Senior Design — Stony Brook University  
 Team: Depth Perception  
