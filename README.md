@@ -292,12 +292,19 @@ The window shows three panels side by side:
 ---
 ## Results
 
+## Results
+
 ### System Demonstrations
 
 <p align="center">
-  <img src="images/Screenshot 2026-04-27 020928.png" width="600"/>
+  <img src="images/Screenshot 2026-04-27 023640.png" width="500"/>
 </p>
-<p align="center"><em>Figure 1: ESP32 and FLIR Lepton thermal camera hardware setup used for real-time temperature streaming.</em></p>
+<p align="center"><em>Figure 1a: Intel RealSense D435i camera setup used for RGB and depth data acquisition.</em></p>
+
+<p align="center">
+  <img src="images/Screenshot 2026-04-27 020928.png" width="500"/>
+</p>
+<p align="center"><em>Figure 1b: ESP32 and FLIR Lepton thermal camera hardware setup used for real-time temperature streaming.</em></p>
 
 ---
 
@@ -325,11 +332,11 @@ The window shows three panels side by side:
 <p align="center">
   <img src="images/Screenshot 2026-04-27 023312.png" width="600"/>
 </p>
-<p align="center"><em>Figure 5: Detection of common household objects (fruit bowls, containers, and flower pots) using YOLOv8, demonstrating general object recognition capability.</em></p>
+<p align="center"><em>Figure 5: Detection of multiple household objects (fruit bowls, containers, and plant pots) using YOLOv8 trained on the COCO dataset, demonstrating robust object recognition in cluttered indoor environments.</em></p>
 
 ---
 
 <p align="center">
   <img src="images/Screenshot 2026-04-23 005839.png" width="600"/>
 </p>
-<p align="center"><em>Figure 6: Person detection using YOLOv8, with bounding box and spatial awareness integrated into the system.</em></p>
+<p align="center"><em>Figure 6: Person detection using YOLOv8 with bounding box localization and spatial awareness integration.</em></p>
