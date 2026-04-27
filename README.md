@@ -291,9 +291,6 @@ The window shows three panels side by side:
 
 ---
 ## Results
-
-## Results
-
 ### System Demonstrations
 
 <p align="center">
