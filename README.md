@@ -1,4 +1,4 @@
-## DepthPerception – Vision-Based Hazard Detection System
+## DepthPerception – Real Time Vision-Based Hazard Detection and Navigation Assistance System
 ---
 Department of Electrical and Computer Engineering, Stony Brook University  
 Team: Depth Perception  
@@ -8,9 +8,9 @@ Last Updated: April 18, 2026
 
 
 ---
-# Kitchen Hazard Detection & Escape Route System
+# In Door Hazard Detection & Escape Route System
 
-A real-time kitchen safety system using an Intel RealSense D435 depth camera. The system detects hazards, builds a live map of the kitchen, finds a safe escape route to the exit, and guides the user out using spoken audio directions.
+A real-time in door safety system using an Intel RealSense D435 depth camera. The system detects hazards, builds a live map of the kitchen, finds a safe escape route to the exit, and guides the user out using spoken audio directions.
 
 ---
 
