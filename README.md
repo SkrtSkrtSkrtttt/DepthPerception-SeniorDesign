@@ -1,4 +1,4 @@
-## DepthPerception – Real Time Vision-Based Hazard Detection and Navigation Assistance System
+## Real Time Vision-Based Hazard Detection and Navigation Assistance System
 ---
 Department of Electrical and Computer Engineering, Stony Brook University  
 Team: Depth Perception  
