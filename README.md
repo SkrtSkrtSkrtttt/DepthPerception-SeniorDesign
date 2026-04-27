@@ -323,6 +323,13 @@ The window shows three panels side by side:
 ---
 
 <p align="center">
+  <img src="images/Screenshot 2026-04-27 023312.png" width="600"/>
+</p>
+<p align="center"><em>Figure 5: Detection of common household objects (fruit bowls, containers, and flower pots) using YOLOv8, demonstrating general object recognition capability.</em></p>
+
+---
+
+<p align="center">
   <img src="images/Screenshot 2026-04-23 005839.png" width="600"/>
 </p>
-<p align="center"><em>Figure 5: Person detection using YOLOv8, with bounding box and spatial awareness integrated into the system.</em></p>
+<p align="center"><em>Figure 6: Person detection using YOLOv8, with bounding box and spatial awareness integrated into the system.</em></p>
