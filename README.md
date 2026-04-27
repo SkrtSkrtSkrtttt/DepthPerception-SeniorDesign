@@ -290,4 +290,39 @@ The window shows three panels side by side:
 | Right — Grid map | Top-down occupancy map (green = free, dark = obstacle, red = hazard, yellow = exit, orange = planned escape path, white dot = user) |
 
 ---
+## Results
 
+### System Demonstrations
+
+<p align="center">
+  <img src="images/Screenshot 2026-04-27 020928.png" width="600"/>
+</p>
+<p align="center"><em>Figure 1: ESP32 and FLIR Lepton thermal camera hardware setup used for real-time temperature streaming.</em></p>
+
+---
+
+<p align="center">
+  <img src="images/Screenshot 2026-04-21 012334.png" width="600"/>
+</p>
+<p align="center"><em>Figure 2: Thermal reading of a stove reaching approximately 359°F, demonstrating high-temperature detection capability.</em></p>
+
+---
+
+<p align="center">
+  <img src="images/Screenshot 2026-04-19 162340.png" width="600"/>
+</p>
+<p align="center"><em>Figure 3: Detection of a small kitchen stove fire with 41% confidence using the fire detection pipeline.</em></p>
+
+---
+
+<p align="center">
+  <img src="images/Screenshot 2026-04-19 170942.png" width="600"/>
+</p>
+<p align="center"><em>Figure 4: Exit successfully detected with navigation instructions displayed at the bottom of the interface.</em></p>
+
+---
+
+<p align="center">
+  <img src="images/Screenshot 2026-04-23 005839.png" width="600"/>
+</p>
+<p align="center"><em>Figure 5: Person detection using YOLOv8, with bounding box and spatial awareness integrated into the system.</em></p>
