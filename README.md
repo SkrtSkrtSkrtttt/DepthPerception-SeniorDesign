@@ -27,6 +27,62 @@ The RealSense camera rotates continuously around the kitchen. Every frame it cap
 
 In parallel, a FLIR Lepton thermal camera (via an ESP32 running FreeRTOS) streams temperature data over Wi-Fi. This data is processed to detect high-temperature regions (e.g., fire, hot surfaces) and is fused into the world map as additional hazard zones.
 
+
+## Thermal Sensing System — FLIR Lepton + ESP32
+
+To complement RGB and depth-based perception, the system integrates a thermal sensing pipeline using a FLIR Lepton radiometric thermal camera. Unlike standard cameras, the FLIR Lepton measures infrared radiation to capture temperature data, enabling detection of heat sources that are not visible in RGB images, such as hot surfaces, active flames, or recently used appliances.
+
+### Hardware Integration
+
+The FLIR Lepton is interfaced with an ESP32 microcontroller, which acts as a bridge between the thermal sensor and the main system. The ESP32 runs **FreeRTOS**, allowing concurrent handling of sensor communication, frame acquisition, and network transmission.
+
+Two communication protocols are used:
+
+- **I2C (CCI)** — Used to configure and control the FLIR Lepton module (e.g., enabling radiometric TLinear mode and high-gain settings)  
+- **VoSPI (Video SPI)** — Used for high-speed transfer of raw thermal image frames (80×60 resolution)  
+
+This dual-interface design enables precise sensor control while maintaining efficient real-time data acquisition.
+
+### Data Processing Pipeline
+
+The ESP32 continuously captures thermal frames and processes them in real time:
+
+- Raw VoSPI frames are reconstructed into full thermal images  
+- Radiometric TLinear data is converted into real-world temperature values (°C / °F)  
+- Maximum temperature and high-temperature regions are identified using configurable thresholds  
+- Data is packaged and transmitted over Wi-Fi (TCP) to the host system  
+
+On the host side (`thermal_receiver.py`), incoming data is parsed and integrated into the perception pipeline, where thermal hotspots are mapped into the occupancy grid as hazard zones.
+
+---
+
+### Thermal Imaging Results
+
+The following results demonstrate the thermal subsystem’s ability to capture temperature distributions and detect heat sources in real time.
+
+<p align="center">
+  <img src="images/Screenshot 2026-04-27 141744.png" width="500"/>
+</p>
+<p align="center"><em>Figure T1: Wiring and hardware setup of the ESP32 and FLIR Lepton thermal camera used for real-time thermal data acquisition.</em></p>
+
+---
+
+<p align="center">
+  <img src="images/Screenshot 2026-04-27 141852.png" width="500"/>
+</p>
+<p align="center"><em>Figure T2: Thermal map of an active stove, highlighting high-temperature regions and demonstrating accurate heat detection.</em></p>
+
+---
+
+<p align="center">
+  <img src="images/Screenshot 2026-04-27 141937.png" width="500"/>
+</p>
+<p align="center"><em>Figure T3: Thermal image capturing a human heat signature, demonstrating the system’s ability to detect biological heat sources.</em></p>
+
+---
+
+These results demonstrate that the thermal subsystem provides reliable temperature-based perception, enhancing the system’s ability to detect hazards that may not be visible through RGB or depth sensing alone.
+
 ![System Architecture](images/system_architecture.png.png)
 ---
 
