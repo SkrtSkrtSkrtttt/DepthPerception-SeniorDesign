@@ -27,7 +27,7 @@ The RealSense camera rotates continuously around the kitchen. Every frame it cap
 
 In parallel, a FLIR Lepton thermal camera (via an ESP32 running FreeRTOS) streams temperature data over Wi-Fi. This data is processed to detect high-temperature regions (e.g., fire, hot surfaces) and is fused into the world map as additional hazard zones.
 
-![System Architecture](system_architecture.png.png)
+![System Architecture](images/system_architecture.png.png)
 ---
 
 ## Key Terminology
