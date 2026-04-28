@@ -130,31 +130,112 @@ Converts 2D pixels + depth into real-world 3D coordinates.
 ## File Reference
 
 ### `main.py` — System Orchestrator
-Coordinates perception, mapping, planning, and audio feedback.
+The central control loop that coordinates the entire system. Runs continuously once per frame and integrates all subsystems.
+
+**Responsibilities:**
+- Captures frames from `camera.py`
+- Runs object detection via `detector.py`
+- Updates the occupancy grid through `mapper.py`
+- Registers hazards and exit locations
+- Triggers A* path planning via `planner.py`
+- Sends navigation instructions to `navigator.py`
+- Manages audio output through `audio_feedback.py`
+- Displays RGB feed, depth map, and occupancy grid in real time
+
+---
 
 ### `camera.py` — RealSense Interface
-Handles RGB/depth capture and 3D projection.
+Handles all interactions with the Intel RealSense D435i camera.
 
-### `mapper.py` — Mapping Engine
-Performs ICP-based localization and builds occupancy grid.
+**Responsibilities:**
+- Initializes and configures RGB + depth streams  
+- Aligns depth frames with RGB frames  
+- Converts depth pixels into 3D coordinates (deprojection)  
+- Provides synchronized frame data for processing  
 
-### `detector.py` — Object Detection
-Runs YOLOv8 and detects hazards, fire, and doors.
+---
 
-### `planner.py` — Path Planner
-Implements A* pathfinding on occupancy grid.
+### `mapper.py` — Mapping & Localization Engine
+Builds and maintains a real-time 2D occupancy grid using depth data.
 
-### `navigator.py` — Direction Generator
-Converts paths into spoken instructions.
+**Responsibilities:**
+- Converts depth frames into 3D point clouds  
+- Uses ICP to estimate camera motion between frames  
+- Tracks camera pose over time (no encoder required)  
+- Projects points into a top-down occupancy grid  
+- Classifies cells as free, occupied, hazard, or exit  
+- Inflates hazard regions with safety buffers  
 
-### `audio_feedback.py` — Text-to-Speech
-Handles real-time voice output using threaded TTS.
+---
 
-### `thermal_receiver.py` — Thermal Data Receiver
-Processes thermal data from ESP32 over TCP.
+### `detector.py` — Object Detection Module
+Performs real-time perception using multiple detection techniques.
 
-### `updated_threshold_TLinear_highgain.c` — ESP32 Firmware
-Captures and streams thermal data using FreeRTOS.
+**Responsibilities:**
+- Runs YOLOv8 on RGB frames to detect objects and hazards  
+- Outputs bounding boxes, confidence scores, and labels  
+- Computes depth-based distance and 3D position of detections  
+- Detects fire using HSV-based color segmentation  
+- Identifies doors using depth-gap heuristics  
+
+---
+
+### `planner.py` — Path Planning Engine
+Implements A* pathfinding to compute safe navigation routes.
+
+**Responsibilities:**
+- Finds shortest path from user position to exit  
+- Avoids hazard and obstacle regions  
+- Supports 8-directional movement  
+- Uses heuristic-based optimization for efficiency  
+- Simplifies paths into key waypoints  
+
+---
+
+### `navigator.py` — Navigation & Instruction Generator
+Converts path waypoints into human-readable directions.
+
+**Responsibilities:**
+- Calculates direction between consecutive waypoints  
+- Groups movements into segments  
+- Generates turn-by-turn instructions  
+- Formats directions for display and audio output  
+
+---
+
+### `audio_feedback.py` — Text-to-Speech System
+Provides real-time spoken feedback to the user.
+
+**Responsibilities:**
+- Converts navigation instructions into speech  
+- Issues hazard warnings based on proximity and stability  
+- Uses a separate thread to avoid blocking the main loop  
+- Prevents overlapping speech using cooldown logic  
+
+---
+
+### `thermal_receiver.py` — Thermal Data Processing Module
+Handles incoming thermal data from the ESP32.
+
+**Responsibilities:**
+- Receives thermal frames over Wi-Fi (TCP)  
+- Parses structured packet data  
+- Converts raw values into temperature readings  
+- Identifies high-temperature regions  
+- Stores and provides thermal data for system integration  
+
+---
+
+### `updated_threshold_TLinear_highgain.c` — ESP32 Thermal Firmware
+Embedded firmware running on the ESP32 for thermal sensing.
+
+**Responsibilities:**
+- Configures FLIR Lepton via I2C (CCI)  
+- Captures thermal frames via VoSPI  
+- Enables TLinear radiometric mode  
+- Processes temperature data and thresholds  
+- Packages and transmits data over Wi-Fi  
+- Uses FreeRTOS for real-time task scheduling  
 
 ---
 
