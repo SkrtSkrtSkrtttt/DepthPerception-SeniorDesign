@@ -290,11 +290,6 @@ The following results demonstrate the system’s ability to detect hazards and g
 
 ---
 
-## Installation
-
-```bash
-pip install pyrealsense2 opencv-python numpy open3d ultralytics pyttsx3 pythoncom
-
 ---
 ## Project Structure
 
@@ -315,6 +310,17 @@ embedded/
 ```
 
 ---
+
+## Installation
+
+```bash
+pip install pyrealsense2 opencv-python numpy open3d ultralytics pyttsx3 pythoncom
+```
+
+On Linux, also install the TTS engine:
+```bash
+sudo apt-get install espeak
+```
 
 ---
 
@@ -339,4 +345,5 @@ The window shows three panels side by side:
 | Centre — Depth heatmap | Colour-coded depth map (blue = close, red = far) |
 | Right — Grid map | Top-down occupancy map (green = free, dark = obstacle, red = hazard, yellow = exit, orange = planned escape path, white dot = user) |
 
+---
 
