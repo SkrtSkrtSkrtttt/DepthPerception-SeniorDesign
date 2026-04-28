@@ -316,17 +316,6 @@ embedded/
 
 ---
 
-## Installation
-
-```bash
-pip install pyrealsense2 opencv-python numpy open3d ultralytics pyttsx3 pythoncom
-```
-
-On Linux, also install the TTS engine:
-```bash
-sudo apt-get install espeak
-```
-
 ---
 
 ## Running the System
