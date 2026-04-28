@@ -3,7 +3,7 @@
 Department of Electrical and Computer Engineering, Stony Brook University  
 Team: Depth Perception  
 Advisor: Prof. Murali Subbarao  
-Author: Naafiul Hossain  
+Repo Author: Naafiul Hossain  
 
 ---
 
