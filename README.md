@@ -51,7 +51,7 @@ Each frame, the system performs four key operations:
 In parallel, a FLIR Lepton thermal camera streams temperature data via an ESP32 running FreeRTOS. Thermal data is processed and fused into the occupancy grid as additional hazard zones.
 
 <p align="center">
-  <img src="images/system_architecture.png" width="700"/>
+  <img src="images/system_architecture.png.png" width="700"/>
 </p>
 <p align="center"><em>Figure: System Architecture Overview</em></p>
 
