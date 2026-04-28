@@ -1,16 +1,39 @@
-## Real Time Vision-Based Hazard Detection and Navigation Assistance System
----
+# Vision-Based Smart Indoor Hazard Detection & Navigation System
+
 Department of Electrical and Computer Engineering, Stony Brook University  
 Team: Depth Perception  
 Advisor: Prof. Murali Subbarao  
-GitHub Author: Naafiul Hossain  
-Last Updated: April 18, 2026  
-
+Author: Naafiul Hossain  
 
 ---
-# In Door Hazard Detection & Escape Route System
 
-A real-time in door safety system using an Intel RealSense D435 depth camera. The system detects hazards, builds a live map of the kitchen, finds a safe escape route to the exit, and guides the user out using spoken audio directions.
+## Overview
+
+A real-time multimodal safety system that combines computer vision, depth sensing, and thermal imaging to detect indoor hazards and guide users to a safe exit. The system integrates YOLOv8 object detection, ICP-based mapping, A* path planning, and an embedded ESP32 + FLIR thermal pipeline to enable robust perception in real-world environments.
+
+---
+
+## 🚀 Demo — Full System in Action
+
+<p align="center">
+  <a href="https://drive.google.com/file/d/1avbhyp39WIdrwuDVQR6I6T60N_gQK89k/view?usp=sharing">
+    <img src="images/demo_thumbnail.png" width="700"/>
+  </a>
+</p>
+
+<p align="center"><em>Click to watch the full system demo</em></p>
+
+---
+
+## Tech Stack
+
+- **Computer Vision:** YOLOv8 (Ultralytics), OpenCV  
+- **Depth Sensing:** Intel RealSense D435i  
+- **Thermal Sensing:** FLIR Lepton + ESP32 (FreeRTOS, VoSPI, I2C)  
+- **Mapping & Localization:** ICP (Open3D), Occupancy Grid Mapping  
+- **Path Planning:** A* Algorithm  
+- **Embedded Systems:** ESP32 (C, FreeRTOS)  
+- **Languages:** Python, C  
 
 ---
 
@@ -18,278 +41,178 @@ A real-time in door safety system using an Intel RealSense D435 depth camera. Th
 
 The system uses both RGB/depth and thermal sensing to monitor the environment in real time.
 
-The RealSense camera rotates continuously around the kitchen. Every frame it captures, the system does four things at once:
+Each frame, the system performs four key operations:
 
-1. **Figures out where the camera is pointing** (ICP)  
-2. **Identifies hazards, people, and doors** in the image (YOLO)  
-3. **Updates a top-down map** of the kitchen with all of that information  
-4. **Plans the safest path to the exit** and speaks the directions aloud (A*)  
+1. **Camera Localization** — Estimates camera pose using ICP  
+2. **Object Detection** — Identifies hazards, people, and doors using YOLOv8  
+3. **Mapping** — Updates a top-down occupancy grid of the environment  
+4. **Navigation** — Computes the safest path to an exit using A* and provides spoken directions  
 
-In parallel, a FLIR Lepton thermal camera (via an ESP32 running FreeRTOS) streams temperature data over Wi-Fi. This data is processed to detect high-temperature regions (e.g., fire, hot surfaces) and is fused into the world map as additional hazard zones.
+In parallel, a FLIR Lepton thermal camera streams temperature data via an ESP32 running FreeRTOS. Thermal data is processed and fused into the occupancy grid as additional hazard zones.
 
-![System Architecture](images/system_architecture.png.png)
-----
+<p align="center">
+  <img src="images/system_architecture.png" width="700"/>
+</p>
+<p align="center"><em>Figure: System Architecture Overview</em></p>
+
+---
 
 ## Thermal Sensing System — FLIR Lepton + ESP32
 
-To complement RGB and depth-based perception, the system integrates a thermal sensing pipeline using a FLIR Lepton radiometric thermal camera. Unlike standard cameras, the FLIR Lepton measures infrared radiation to capture temperature data, enabling detection of heat sources that are not visible in RGB images, such as hot surfaces, active flames, or recently used appliances.
+To complement RGB and depth-based perception, the system integrates a thermal sensing pipeline using a FLIR Lepton radiometric thermal camera. Unlike standard cameras, the FLIR Lepton measures infrared radiation to capture temperature data, enabling detection of heat sources not visible in RGB images.
 
 ### Hardware Integration
 
-The FLIR Lepton is interfaced with an ESP32 microcontroller, which acts as a bridge between the thermal sensor and the main system. The ESP32 runs **FreeRTOS**, allowing concurrent handling of sensor communication, frame acquisition, and network transmission.
+The FLIR Lepton is interfaced with an ESP32 microcontroller running **FreeRTOS**, enabling concurrent handling of acquisition and transmission.
 
-Two communication protocols are used:
+- **I2C (CCI):** Sensor configuration and control  
+- **VoSPI:** High-speed thermal frame transfer (80×60 resolution)  
 
-- **I2C (CCI)** — Used to configure and control the FLIR Lepton module (e.g., enabling radiometric TLinear mode and high-gain settings)  
-- **VoSPI (Video SPI)** — Used for high-speed transfer of raw thermal image frames (80×60 resolution)  
+### Data Pipeline
 
-This dual-interface design enables precise sensor control while maintaining efficient real-time data acquisition.
-
-### Data Processing Pipeline
-
-The ESP32 continuously captures thermal frames and processes them in real time:
-
-- Raw VoSPI frames are reconstructed into full thermal images  
-- Radiometric TLinear data is converted into real-world temperature values (°C / °F)  
-- Maximum temperature and high-temperature regions are identified using configurable thresholds  
-- Data is packaged and transmitted over Wi-Fi (TCP) to the host system  
-
-On the host side (`thermal_receiver.py`), incoming data is parsed and integrated into the perception pipeline, where thermal hotspots are mapped into the occupancy grid as hazard zones.
+- Frames captured via VoSPI  
+- Converted to temperature (°C / °F) using TLinear  
+- Hot regions detected via thresholds  
+- Data streamed over Wi-Fi (TCP)  
+- Parsed by `thermal_receiver.py` and fused into the occupancy grid  
 
 ---
 
 ### Thermal Imaging Results
 
-The following results demonstrate the thermal subsystem’s ability to capture temperature distributions and detect heat sources in real time.
-
 <p align="center">
   <img src="images/Screenshot 2026-04-27 141744.png" width="500"/>
 </p>
-<p align="center"><em>Figure T1: Wiring and hardware setup of the ESP32 and FLIR Lepton thermal camera used for real-time thermal data acquisition.</em></p>
+<p align="center"><em>Figure T1: ESP32 and FLIR Lepton wiring and hardware setup.</em></p>
 
 ---
 
 <p align="center">
   <img src="images/Screenshot 2026-04-27 141852.png" width="500"/>
 </p>
-<p align="center"><em>Figure T2: Thermal map of an active stove, highlighting high-temperature regions and demonstrating accurate heat detection.</em></p>
+<p align="center"><em>Figure T2: Thermal map of an active stove showing high-temperature regions.</em></p>
 
 ---
 
 <p align="center">
   <img src="images/Screenshot 2026-04-27 141937.png" width="500"/>
 </p>
-<p align="center"><em>Figure T3: Thermal image capturing a human heat signature, demonstrating the system’s ability to detect biological heat sources.</em></p>
+<p align="center"><em>Figure T3: Thermal image capturing a human heat signature.</em></p>
 
 ---
 
-These results demonstrate that the thermal subsystem provides reliable temperature-based perception, enhancing the system’s ability to detect hazards that may not be visible through RGB or depth sensing alone.
+These results demonstrate that the thermal subsystem provides reliable temperature-based perception, enhancing hazard detection beyond RGB and depth sensing.
 
 ---
 
 ## Key Terminology
 
 ### ICP — Iterative Closest Point
-ICP is the algorithm in `mapper.py` that tracks the rotating camera without any angle sensor. Every frame, it takes the current depth point cloud and compares it to the previous one. By finding the rotation and translation that best aligns the two clouds, it figures out how much the camera has moved. Over many frames this builds up a full picture of where the camera has been — and therefore what the whole kitchen looks like.
-
-**In plain terms:** ICP is how the system answers "where is the camera pointing right now?"
-
-**Limitation:** ICP can drift over time, especially in dynamic scenes (steam, moving people). Adding a rotary encoder to the camera mount would make this much more reliable.
+Tracks camera motion by aligning consecutive depth point clouds.
 
 ### YOLO — You Only Look Once
-YOLO is the neural network in `detector.py` that identifies objects in the camera's RGB image. Unlike older detection methods that scan the image many times, YOLO divides the frame into a grid and predicts all bounding boxes and class labels in a single pass — making it fast enough to run in real time at 30fps.
+Real-time object detection model used to identify hazards and objects.
 
-The system uses **YOLOv8** (the `yolov8n.pt` model), pre-trained on the COCO dataset which includes 80 object categories. It detects:
-- People
-- Knives, scissors, bottles, cups, laptops, phones, and other hazard objects
-- Open doorways (via a depth-gap geometric method, since "door" is not a COCO class)
-- Fire and flames (via an HSV colour heuristic, since fire is not a COCO class)
-
-**In plain terms:** YOLO is how the system answers "what objects are in this frame and where are they?"
-
-**Limitation:** The model was trained on general images, not kitchen-specific hazards. Things like a pot boiling over, a hot surface, or a spill on the floor require custom training data to detect reliably.
-
-### A* (A-Star) Pathfinding
-A* is the algorithm in `planner.py` that finds the shortest safe path from the user's position to the exit on the occupancy grid. It works by scoring every candidate cell with two numbers added together: how far it is from the start, and an estimate of how far it still is from the goal. It always expands the cell with the lowest combined score, which guarantees the shortest path is found without wasting time exploring dead ends.
-
-Hazard zones and occupied cells are marked as impassable, so A* naturally routes around fires, walls, and obstacles.
-
-**In plain terms:** A* is how the system answers "what is the safest way to get from here to the exit?"
+### A* Pathfinding
+Finds the shortest safe route through the occupancy grid.
 
 ### Occupancy Grid
-A top-down 2D map of the kitchen stored as a 400×400 grid of cells (each cell = 5cm × 5cm, covering a 20m × 20m area). Each cell has one of five states:
-
-| Value | Meaning |
-|-------|---------|
-| 0 — Unknown | Not yet seen by the camera |
-| 1 — Free | Safe to walk through |
-| 2 — Occupied | Wall, furniture, or obstacle |
-| 3 — Hazard | Fire, knife, or other danger (inflated with a safety buffer) |
-| 4 — Exit | Registered door location |
+2D map representing free space, obstacles, hazards, and exits.
 
 ### Point Cloud
-A collection of 3D points generated from the depth camera. Each pixel in the depth image becomes a point in 3D space with X, Y, Z coordinates in metres relative to the camera. Point clouds are the raw material that ICP uses to track camera movement and that the occupancy grid is built from.
+3D representation of the environment from depth data.
 
 ### Depth Deprojection
-The process of converting a 2D pixel location plus a depth measurement into a real-world 3D coordinate. The RealSense camera's intrinsic parameters (focal length, optical centre) are used to calculate exactly where in 3D space a detected object is. This is how every YOLO detection gets a real-world position.
+Converts 2D pixels + depth into real-world 3D coordinates.
 
 ---
 
 ## File Reference
 
-### `main.py` — Orchestrator
-The main loop that ties every module together. Runs continuously, once per camera frame. Responsibilities:
-- Calls `camera.py` to get each frame
-- Calls `mapper.py` to update the world map
-- Calls `detector.py` to run YOLO detection
-- Registers hazards and exit locations on the map
-- Detects small floor-level obstacles via depth mask (catches things YOLO misses)
-- Calls `planner.py` to replan the escape route every 3 seconds
-- Calls `navigator.py` to convert the path to spoken instructions
-- Calls `audio_feedback.py` to speak warnings and directions
-- Renders the three-panel display: RGB feed, depth heatmap, top-down grid map
-
-**Controls:**
-- `Q` or `ESC` — quit
-- `E` — manually register the exit (point the camera at the door and press E)
-
----
+### `main.py` — System Orchestrator
+Coordinates perception, mapping, planning, and audio feedback.
 
 ### `camera.py` — RealSense Interface
-Wraps the Intel RealSense D435 pipeline. Handles stream configuration, frame alignment, and depth-to-3D projection.
+Handles RGB/depth capture and 3D projection.
 
-Key methods:
-- `start()` — initialises the camera and caches intrinsic parameters
-- `get_frames()` — returns aligned colour image, depth image, and depth frame
-- `deproject_pixel(px, py, depth_m)` — converts a 2D pixel + depth into a 3D `[X, Y, Z]` point in camera space
-- `stop()` — cleanly shuts down the pipeline
-
----
-
-### `mapper.py` — Occupancy Grid Builder
-Builds and maintains the 2D top-down map of the kitchen. The most complex module in the system.
-
-Key responsibilities:
-- Converts each depth frame into a point cloud
-- Uses **ICP** to estimate camera rotation between frames (no angle encoder required)
-- Accumulates camera pose over time to know where the camera is in the world
-- Projects floor-level points from the point cloud into the occupancy grid
-- Inflates hazard zones with a 0.6m safety buffer around each detected hazard
-- Tracks the exit cell location once registered
-
-Key constants (tunable in the file):
-- `GRID_RES = 0.05` — cell size in metres (5cm)
-- `HAZARD_INFLATE_M = 0.6` — safety bubble radius around hazards
-- `ICP_DISTANCE_THRESH = 0.1` — how closely ICP tries to match point clouds
-
----
+### `mapper.py` — Mapping Engine
+Performs ICP-based localization and builds occupancy grid.
 
 ### `detector.py` — Object Detection
-Runs all visual detection on the RGB frame. Uses YOLOv8 for object detection, a colour heuristic for fire, and a depth-gap geometric method for doors.
+Runs YOLOv8 and detects hazards, fire, and doors.
 
-Key responsibilities:
-- Loads and runs the YOLOv8 model on every frame
-- Returns `DetectionResult` objects containing lists of hazards, persons, and doors
-- Each detection includes: label, confidence, bounding box, depth in metres, 3D world coordinates, and direction (LEFT / CENTER / RIGHT)
-- Detects fire via HSV colour range in the image (no YOLO class needed)
-- Detects open doorways by finding wide vertical bands of far/zero depth in the middle of the frame
-
-Tunable constants:
-- `YOLO_CONF = 0.25` — minimum confidence to report a detection (lower = more detections, more false positives)
-- `FIRE_MIN_AREA = 500` — minimum pixel area to report a fire detection
-- `DOOR_MIN_WIDTH_PX = 60` — minimum pixel width of a depth gap to count as a door
-
----
-
-### `planner.py` — A* Path Planner
-Finds the shortest safe path from the user's current cell to the exit on the occupancy grid.
-
-Key responsibilities:
-- Implements 8-directional A* (can move diagonally as well as cardinally)
-- Treats FREE and UNKNOWN cells as traversable; OCCUPIED and HAZARD cells are blocked
-- Uses octile distance as the heuristic (optimal for 8-directional grids)
-- `simplify_path()` reduces the raw waypoint list to key turning points
-
-Key functions:
-- `astar(grid, start, goal)` — returns list of `(row, col)` waypoints or `[]` if no path exists
-- `simplify_path(path, tolerance=3)` — keeps every Nth waypoint to reduce verbosity
-
----
+### `planner.py` — Path Planner
+Implements A* pathfinding on occupancy grid.
 
 ### `navigator.py` — Direction Generator
-Converts a list of grid waypoints into natural language directions suitable for audio playback.
-
-Key responsibilities:
-- Calculates the compass bearing between each consecutive pair of waypoints
-- Groups consecutive steps in the same direction into segments
-- Detects turn changes between segments and describes them (turn left, turn right, turn around)
-- Prepends hazard warnings and appends an "exit reached" callout
-- `format_for_display()` formats instructions as a numbered list for the on-screen overlay
-
-Example output:
-```
-Warning: fire detected. Follow the escape route.
-Move forward 1.5 metres.
-Turn left. Move forward 0.5 metres.
-Move forward-right 1.0 metres.
-You have reached the exit. Get out now.
-```
-
----
+Converts paths into spoken instructions.
 
 ### `audio_feedback.py` — Text-to-Speech
-Thread-safe audio output using `pyttsx3`. Runs the TTS engine in a dedicated background thread to avoid the Windows COM conflict (`WinError -2147417850`).
+Handles real-time voice output using threaded TTS.
 
-Key responsibilities:
-- `speak(text, force)` — speak text with cooldown rate limiting
-- `speak_hazard(dist_m, direction, hazard_now)` — rate-limited obstacle warning with stable detection debounce; resets after each announcement so it can trigger repeatedly
-- `speak_route(instructions)` — speak a full escape route instruction list sequentially in the background, cancelling any previous narration
-- `cancel_route()` — stop the current route narration immediately
+### `thermal_receiver.py` — Thermal Data Receiver
+Processes thermal data from ESP32 over TCP.
 
-Key constants:
-- `cooldown_sec = 2.5` — minimum seconds between repeated announcements
-- `stable_sec = 0.5` — how long a hazard must be visible before it's announced
+### `updated_threshold_TLinear_highgain.c` — ESP32 Firmware
+Captures and streams thermal data using FreeRTOS.
 
 ---
 
-### `thermal_receiver.py` — Thermal Stream Receiver
-Background TCP module that receives and processes thermal data streamed from the ESP32-based FLIR Lepton system.
+## Results
 
-Key responsibilities:
-- Listens for incoming thermal frames over Wi-Fi/TCP from the ESP32
-- Parses the custom packet format (header + raw frame payload)
-- Converts TLinear thermal counts into real-world temperature values (°C / °F)
-- Tracks maximum temperature and detects “hot” regions using configurable thresholds
-- Stores the latest thermal frame and state in a thread-safe structure for system-wide access
-- Exposes APIs (`get_latest_state`, `get_latest_frame`) for integration with the main pipeline
+The following results demonstrate the system’s ability to detect hazards and guide navigation in real time.
 
-Key features:
-- Supports real-time streaming at frame-level granularity
-- Automatically handles connection loss and reconnection
-- Decodes ESP32 mode flags (high gain, TLinear, resolution modes)
-- Designed for future sensor fusion with RGB + depth data
+<p align="center">
+  <img src="images/Screenshot 2026-04-27 023640.png" width="500"/>
+</p>
+<p align="center"><em>Figure 1a: Intel RealSense D435i setup.</em></p>
+
+<p align="center">
+  <img src="images/Screenshot 2026-04-27 020928.png" width="500"/>
+</p>
+<p align="center"><em>Figure 1b: ESP32 + FLIR thermal setup.</em></p>
 
 ---
 
-### `updated_threshold_TLinear_highgain.c` — ESP32 Thermal Streamer
-Embedded firmware running on the ESP32 (FreeRTOS-based) that interfaces with the FLIR Lepton thermal camera and streams data to the host system.
+<p align="center">
+  <img src="images/Screenshot 2026-04-21 012334.png" width="600"/>
+</p>
+<p align="center"><em>Figure 2: Stove thermal reading (~359°F).</em></p>
 
-Key responsibilities:
-- Configures the FLIR Lepton using I2C (CCI) and captures frames over SPI (VoSPI)
-- Enables radiometric TLinear mode with high gain for accurate temperature measurement
-- Captures full thermal frames (80×60) in real time
-- Computes frame statistics (max value, averages, hot threshold detection)
-- Packages data into a structured header + payload format
-- Streams thermal data over Wi-Fi using a TCP client to the Python receiver
+---
 
-Key features:
-- Runs on FreeRTOS for real-time task scheduling and concurrency
-- Uses dual interfaces:
-  - I2C → camera configuration
-  - SPI → high-speed frame acquisition
-- Supports temperature-based thresholding (e.g., detecting surfaces above ~60°C)
-- Implements automatic reconnection and continuous streaming
-- Designed for integration with higher-level perception and sensor fusion systems
+<p align="center">
+  <img src="images/Screenshot 2026-04-19 162340.png" width="600"/>
+</p>
+<p align="center"><em>Figure 3: Fire detection at 41% confidence.</em></p>
+
+---
+
+<p align="center">
+  <img src="images/Screenshot 2026-04-19 170942.png" width="600"/>
+</p>
+<p align="center"><em>Figure 4: Exit detection with navigation instructions.</em></p>
+
+---
+
+<p align="center">
+  <img src="images/Screenshot 2026-04-27 023312.png" width="600"/>
+</p>
+<p align="center"><em>Figure 5: Detection of household objects using YOLOv8.</em></p>
+
+---
+
+<p align="center">
+  <img src="images/Screenshot 2026-04-23 005839.png" width="600"/>
+</p>
+<p align="center"><em>Figure 6: Person detection with spatial awareness.</em></p>
+
+---
+
+## Installation
+
+```bash
+pip install pyrealsense2 opencv-python numpy open3d ultralytics pyttsx3 pythoncom
 
 ---
 ## Project Structure
@@ -346,50 +269,4 @@ The window shows three panels side by side:
 | Centre — Depth heatmap | Colour-coded depth map (blue = close, red = far) |
 | Right — Grid map | Top-down occupancy map (green = free, dark = obstacle, red = hazard, yellow = exit, orange = planned escape path, white dot = user) |
 
----
-## Results
 
-<p align="center">
-  <img src="images/Screenshot 2026-04-27 023640.png" width="500"/>
-</p>
-<p align="center"><em>Figure 1a: Intel RealSense D435i camera setup used for RGB and depth data acquisition.</em></p>
-
-<p align="center">
-  <img src="images/Screenshot 2026-04-27 020928.png" width="500"/>
-</p>
-<p align="center"><em>Figure 1b: ESP32 and FLIR Lepton thermal camera hardware setup used for real-time temperature streaming.</em></p>
-
----
-
-<p align="center">
-  <img src="images/Screenshot 2026-04-21 012334.png" width="600"/>
-</p>
-<p align="center"><em>Figure 2: Thermal reading of a stove reaching approximately 359°F, demonstrating high-temperature detection capability.</em></p>
-
----
-
-<p align="center">
-  <img src="images/Screenshot 2026-04-19 162340.png" width="600"/>
-</p>
-<p align="center"><em>Figure 3: Detection of a small kitchen stove fire with 41% confidence using the fire detection pipeline.</em></p>
-
----
-
-<p align="center">
-  <img src="images/Screenshot 2026-04-19 170942.png" width="600"/>
-</p>
-<p align="center"><em>Figure 4: Exit successfully detected with navigation instructions displayed at the bottom of the interface.</em></p>
-
----
-
-<p align="center">
-  <img src="images/Screenshot 2026-04-27 023312.png" width="600"/>
-</p>
-<p align="center"><em>Figure 5: Detection of multiple household objects (fruit bowls, containers, and plant pots) using YOLOv8 trained on the COCO dataset, demonstrating robust object recognition in cluttered indoor environments.</em></p>
-
----
-
-<p align="center">
-  <img src="images/Screenshot 2026-04-23 005839.png" width="600"/>
-</p>
-<p align="center"><em>Figure 6: Person detection using YOLOv8 with bounding box localization and spatial awareness integration.</em></p>
